@@ -1,0 +1,33 @@
+SRCDIR ?= src_revised
+SRC ?= main
+WARN ?= false
+WARN_FLAG ?= -Wno-everything
+ifeq ($(WARN),true)
+	WARN_FLAG = "-Wall -Wextra"
+endif 
+HEADER=/home/yosys_include
+all: ./build/obj/$(SRC).so
+
+init: 
+	mkdir -p build/obj
+	mkdir -p build/img
+	mkdir -p build/sva/intra_hbi
+	mkdir -p build/sva/inter_hbi
+	mkdir -p build/dump
+
+	if [ ! -d "$(HEADER)" ]; then echo "no yosys header $(HEADER)"; false; fi 
+	if [ ! -d "/usr/include/tcl8.6" ]; then echo "no tcl\napt-get install tcl8.6-dev"; false; fi 
+
+ 
+./build/obj/$(SRC).so: $(SRCDIR)/$(SRC).cc $(SRCDIR)/cdfg.h $(SRCDIR)/design.h $(SRCDIR)/util.h
+	
+	@echo "warn option = $(WARN_FLAG)"
+	yosys-config  --build $@ $<  --cxxflags  $(WARN_FLAG)  -ggdb \
+			-I$(HEADER) \
+			-MD -D_YOSYS_ -fPIC -I/usr/local/include -std=c++11 \
+			-Os -DYOSYS_ENABLE_READLINE -DYOSYS_ENABLE_PLUGINS \
+			-DYOSYS_ENABLE_GLOB -DYOSYS_ENABLE_ZLIB \
+			-I/usr/include/tcl8.6 -DYOSYS_ENABLE_TCL -DYOSYS_ENABLE_ABC \
+			-DYOSYS_ENABLE_COVER -o ./build/obj/$(SRC).so
+clean:
+	rm -rf ./build/obj/*
