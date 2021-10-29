@@ -95,6 +95,14 @@ struct RTL2USPEC_CDFG : public Pass {
         auto sig_cyc = RTLDataFlow_full_s.sig_cyc();
         assert(sig_cyc.find(instn_reg_name) != sig_cyc.end());
         int th = sig_cyc[instn_reg_name].diff;
+        if (sig_cyc.find(PCR[0]) == sig_cyc.end()) {
+            log("fail\n");
+            assert(0);
+        } else {
+            log("[debug] %d\n", sig_cyc[PCR[0]].diff);
+            log("%d\n", th);
+        }
+        //return;
         assert(sig_cyc[PCR[0]].diff == th);
         dict<pair<RTLIL::SigSpec, RTLIL::Cell*>, int> ignore_frontend;
         dict<string, u_sig_cell> sig_cyc_offset;

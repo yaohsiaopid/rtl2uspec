@@ -178,6 +178,9 @@ public:
         }
 
         for (auto &c : cells_down) {
+            if (string(log_signal(sig_in)).find("imem_reg") != std::string::npos) {
+                log("%s\n", c->name.str().c_str());
+            }
             // visit cell further
             if (find(paths_c.begin(), paths_c.end(), c) != paths_c.end()) {
                 log("[warn] DFS cell cycle: %s %s \n", log_signal(sig_in), c->name.str().c_str());
@@ -196,12 +199,59 @@ public:
                 // cell to mems
                 bool port=false;
                 for (auto &prop : c->connections_) {	
+                    //if (string(log_signal(sig_in)).find("imem_reg") != std::string::npos) {
+                    //    log("port %s\n", prop.first.str().c_str());
+                    //}
+                    
                     SigSpec sig_wr_addr = sigmap_(prop.second);
                     auto chks = sig_wr_addr.chunks();
                     for (auto &chunk: chks) {
                         if (chunk.wire != NULL && sigmap_(chunk.wire) == sig_in) {
                             // mem/cell/reg to mem 
-                            RTLDataFlow_.add_edge(cell, c->name, sigmap_(sig_in), celltomem, prop.first, general, c); // assume outport of memory is usually RD_DATA 
+                            if (prop.first.str().find("WR") != std::string::npos) {
+                                log("[YHDB]\n");
+                                RTLDataFlow_.add_edge(cell, c->name, sigmap_(sig_in), celltomem, prop.first, general, c); 
+                            } else {
+                                    
+                                log("RD %s\n", c->name.str().c_str());
+                                int nread_ports = c->parameters[ID::RD_PORTS].as_int();
+                                int abits = c->parameters[ID::ABITS].as_int();
+                                bool use_rd_clk, rd_clk_posedge;
+                                int width = c->parameters[ID::WIDTH].as_int();
+                                pool<RTLIL::Cell*> cpool;
+                                for (int i = 0; i < nread_ports; i++)
+                                {
+                                    auto sig_rd_addr = c->getPort(ID::RD_ADDR).extract(i*abits, abits);
+                                    if (sig_rd_addr.is_chunk()) {
+                                        auto chk = sig_rd_addr.as_chunk();
+                                        if (chk.wire != NULL)
+                                            sig_rd_addr = sigmap_(chk.wire);
+                                    } else {
+                                        assert(0);
+                                    }
+                                    if (sigmap_(sig_rd_addr) != sigmap_(sig_in)) continue;
+                                    log("memc name :%s\n", c->name.str().c_str());
+                                    auto sig_rd_data = c->getPort(ID::RD_DATA).extract(i*width, width);
+                                    cpool.insert(sigToNextCell[sig_rd_data].begin(), sigToNextCell[sig_rd_data].end());
+                                }
+
+                                // -------------
+                                log("TESTING %s\n", c->name.str().c_str());
+                                if (RTLDataFlow_.check_exist(c, cell)) {
+                                    continue; 
+                                }
+                                paths_c.push_back(c);
+                                for (auto &tmpc: cpool) {
+                                    for (auto &sig_ : cellToNextSig[tmpc]) {
+                                        dfs_visit(sigmap_(sig_), cell, select_, memportsig);	
+                                    }
+                                }
+                                paths_c.pop_back();
+                                            
+                            }
+                            if (string(log_signal(sig_in)).find("imem_reg") != std::string::npos) {
+                                log("add%s\n", prop.first.str().c_str());
+                            }
                             port = true;
                         }
                     }
@@ -277,7 +327,7 @@ public:
                     }
                     log("** downvisit cell at %s \n", log_signal(Y));
                     memportsig = RTLIL::SigSpec();
-                    if (cell->type.in(ID($mem))) {
+                    if (cell->type.in(ID($mem), ID($mem_v2))) {
                         log("vstmem %s\n", cell->parameters[ID::MEMID].decode_string().c_str());
                         memportsig = Y;
                     } else if (ismem(cell)) {
@@ -338,7 +388,7 @@ public:
         for (auto &cell: mem_pool_) {
             int nread_ports = cell->parameters[ID::RD_PORTS].as_int();
             int abits = cell->parameters[ID::ABITS].as_int();
-            bool use_rd_clk, rd_clk_posedge, rd_transparent;
+            bool use_rd_clk, rd_clk_posedge;
             int width = cell->parameters[ID::WIDTH].as_int();
             for (int i = 0; i < nread_ports; i++)
             {
@@ -351,7 +401,6 @@ public:
                     assert(0);
                 }
                 use_rd_clk = cell->parameters[ID::RD_CLK_ENABLE].extract(i).as_bool();
-                rd_transparent = cell->parameters[ID::RD_TRANSPARENT].extract(i).as_bool();
                 if (use_rd_clk) {
                     log("yet support rd clk");
                     assert(0); 
@@ -381,6 +430,7 @@ public:
                     }
                     for (auto &r_: down_regs) {
                         RTLDataFlow_.reg_to_upstream_rdport[r_].insert(make_pair(cell, sig_rd_addr));
+                        // 1026 test
                     }
 
                     for (auto &m_: down_mems) {

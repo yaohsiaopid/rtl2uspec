@@ -28,7 +28,7 @@ bool isreg(const RTLIL::Cell* c) {
 		ID($dff), ID($dffe), ID($sdff), ID($sdffe), ID($sdffce));
 } 
 bool ismem(const RTLIL::Cell* c) {
-	return c->type.in(ID($mem), ID($memrd), ID($memwr), ID($meminit));
+	return c->type.in(ID($mem), ID($memrd), ID($memwr), ID($meminit), ID($mem_v2));
 }
 
 void cat(const RTLIL::SigSpec* sig, RTLIL::Cell* cell, const string &s, const string &prefix="") {

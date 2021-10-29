@@ -1057,7 +1057,7 @@ bool dump_cell_expr(std::ostream &f, std::string indent, RTLIL::Cell *cell)
 		return true;
 	}
 
-	if (cell->type == ID($mem))
+	if (cell->type == ID($mem) || cell->type == ID($mem_v2))
 	{
 		RTLIL::IdString memid = cell->parameters[ID::MEMID].decode_string();
 		std::string mem_id = id(cell->parameters[ID::MEMID].decode_string());
@@ -1155,7 +1155,7 @@ bool dump_cell_expr(std::ostream &f, std::string indent, RTLIL::Cell *cell)
 			sig_rd_addr = cell->getPort(ID::RD_ADDR).extract(i*abits, abits);
 			use_rd_clk = cell->parameters[ID::RD_CLK_ENABLE].extract(i).as_bool();
 			rd_clk_posedge = cell->parameters[ID::RD_CLK_POLARITY].extract(i).as_bool();
-			rd_transparent = cell->parameters[ID::RD_TRANSPARENT].extract(i).as_bool();
+			rd_transparent = cell->parameters[ID::RD_TRANSPARENCY_MASK].extract(i).as_bool();
 			if (use_rd_clk)
 			{
 				{
