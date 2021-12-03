@@ -13,4 +13,7 @@ Below example goes through multicore-v-scale design. Assume the design is at /ho
 2. Evaluate the generated uspec with pipecheck
     `make eval_uspec`
  
+# Temporary fix for migration to tabbyCAD
+Refer to file: `micro21_fix_tmp.png` and `hsiao_micro21_ae_tabby.pdf`
+
 
