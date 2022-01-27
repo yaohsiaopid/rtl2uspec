@@ -1,0 +1,130 @@
+StageName 0 "IF_".
+StageName 1 "mgnode_1".
+StageName 2 "mgnode_0".
+StageName 3 "hasti_mem_mem".
+StageName 4 "mgnode_3".
+StageName 5 "mgnode_2".
+
+
+% ProgramOrder 
+Axiom "PO_man": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => ProgramOrder i1 i2 => AddEdge ((i1, IF_), (i2, IF_), "PO", "orange").
+Axiom "intra_Write":
+forall microop "i", IsAnyWrite i => AddEdges [((i, IF_), (i, mgnode_1), "path_Write");
+((i, IF_), (i, mgnode_0), "path_Write");
+((i, mgnode_1), (i, (0, hasti_mem_mem)), "path_Write");
+((i, mgnode_1), (i, mgnode_3), "path_Write");
+((i, mgnode_0), (i, (0, hasti_mem_mem)), "path_Write");
+((i, mgnode_0), (i, mgnode_3), "path_Write")].
+Axiom "intra_Read":
+forall microop "i", IsAnyRead i => AddEdges [((i, IF_), (i, mgnode_0), "path_Read");
+((i, mgnode_0), (i, mgnode_2), "path_Read");
+((i, mgnode_0), (i, mgnode_3), "path_Read")].
+
+
+Axiom "HBI_0": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyRead i2 => AddEdge((i1, mgnode_0), (i2, mgnode_0), "ppo_percore_0", "blue").% 14
+
+Axiom "HBI_1": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyWrite i2 => AddEdge((i1, mgnode_0), (i2, mgnode_0), "ppo_percore_1", "blue").% 9
+
+Axiom "HBI_2": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyRead i2 => AddEdge((i1, mgnode_0), (i2, mgnode_0), "ppo_percore_2", "blue").% 4
+
+Axiom "HBI_3": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyWrite i2 => AddEdge((i1, mgnode_0), (i2, mgnode_0), "ppo_percore_3", "blue").% 0
+
+Axiom "HBI_4": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyWrite i2 =>  
+AddEdge((i1, mgnode_0), (i2, mgnode_1), "tprl_4", "blue").% 9
+Axiom "HBI_5": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyRead i2 =>  
+AddEdge((i1, mgnode_1), (i2, mgnode_0), "tprl_5", "blue").% 4
+Axiom "HBI_6": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyWrite i2 =>  
+AddEdge((i1, mgnode_1), (i2, mgnode_0), "tprl_6", "blue").% 0
+Axiom "HBI_7": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyWrite i2 =>  
+AddEdge((i1, mgnode_0), (i2, mgnode_1), "tprl_7", "blue").% 0%
+%Axiom "HBI_8": forall microop "i1",  forall microop "i2",
+%SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyRead i2 => SamePhysicalAddress i1 i2 =>   ~(exists microop "j", IsAnyRead j /\ SamePhysicalAddress i1 j /\ EdgeExists((i1, mgnode_2), (j, mgnode_2), "") /\ EdgeExists((j, mgnode_2), (i2, mgnode_0), ""))  => SameData i1 i2 => 
+%AddEdge((i1, mgnode_2), (i2, mgnode_0), "rf_8", "blue").% 18
+ % 8 IS_DATA_DEP%
+%Axiom "HBI_9": forall microop "i1",  forall microop "i2",
+%SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyWrite i2 => SamePhysicalAddress i1 i2 =>   ~(exists microop "j", IsAnyRead j /\ SamePhysicalAddress i1 j /\ EdgeExists((i1, mgnode_2), (j, mgnode_2), "") /\ EdgeExists((j, mgnode_2), (i2, mgnode_0), ""))  => SameData i1 i2 => 
+%AddEdge((i1, mgnode_2), (i2, mgnode_0), "rf_9", "blue").% 13
+ % 9 IS_DATA_DEP
+Axiom "HBI_10": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyWrite i2 => AddEdge((i1, mgnode_1), (i2, mgnode_1), "ppo_percore_10", "blue").% 0
+%
+%Axiom "HBI_11": forall microop "i1",  forall microop "i2",
+%SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyWrite i2 => SamePhysicalAddress i1 i2 =>   ~(exists microop "j", IsAnyRead j /\ SamePhysicalAddress i1 j /\ EdgeExists((i1, mgnode_2), (j, mgnode_2), "") /\ EdgeExists((j, mgnode_2), (i2, mgnode_1), ""))  => SameData i1 i2 => 
+%AddEdge((i1, mgnode_2), (i2, mgnode_1), "rf_11", "blue").% 13
+ % 11 IS_DATA_DEP
+Axiom "HBI_12": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyRead i2 => AddEdge((i1, mgnode_3), (i2, mgnode_3), "ppo_percore_12", "blue").% 14
+
+Axiom "HBI_13": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyWrite i2 => AddEdge((i1, mgnode_3), (i2, mgnode_3), "ppo_percore_13", "blue").% 9
+
+Axiom "HBI_14": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyRead i2 => AddEdge((i1, mgnode_3), (i2, mgnode_3), "ppo_percore_14", "blue").% 4
+
+Axiom "HBI_15": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyWrite i2 => AddEdge((i1, mgnode_3), (i2, mgnode_3), "ppo_percore_15", "blue").% 0
+
+Axiom "HBI_16": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyRead i2 =>  
+AddEdge((i1, mgnode_2), (i2, mgnode_3), "tprl_16", "blue").% 14
+Axiom "HBI_17": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyRead i2 =>  
+AddEdge((i1, mgnode_3), (i2, mgnode_2), "tprl_17", "blue").% 14
+Axiom "HBI_18": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyWrite i2 =>  
+AddEdge((i1, mgnode_2), (i2, mgnode_3), "tprl_18", "blue").% 9
+Axiom "HBI_19": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyRead i2 =>  
+AddEdge((i1, mgnode_3), (i2, mgnode_2), "tprl_19", "blue").% 4
+Axiom "HBI_20": forall microop "i1",  forall microop "i2", 
+~SameMicroop i1 i2 =>  IsAnyWrite i1 => IsAnyWrite i2 => SamePhysicalAddress i1 i2 => 
+AddEdge((i1, (0, hasti_mem_mem)), (i2, (0, hasti_mem_mem)), "infer_ws_shared_20", "red") \/ AddEdge((i2, (0, hasti_mem_mem)), (i1, (0, hasti_mem_mem)), "infer_ws_shared_20", "red").% -1
+
+Axiom "HBI_21": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyWrite i2 =>  
+AddEdge((i1, mgnode_2), (i2, (0, hasti_mem_mem)), "tprl_21", "blue").% 12
+Axiom "HBI_22": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyRead i2 =>  
+AddEdge((i1, (0, hasti_mem_mem)), (i2, mgnode_2), "tprl_22", "blue").% 7
+Axiom "HBI_23": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyWrite i1 => IsAnyWrite i2 =>  
+AddEdge((i1, (0, hasti_mem_mem)), (i2, (0, hasti_mem_mem)), "tprl_23", "blue").% 3
+Axiom "HBI_24": forall microop "i1",  forall microop "i2",
+~SameMicroop i1 i2 =>  IsAnyWrite i1 => IsAnyRead i2 => SamePhysicalAddress i1 i2 =>   ~(exists microop "j", IsAnyWrite j /\ SamePhysicalAddress i1 j /\ EdgeExists((i1, (0, hasti_mem_mem)), (j, (0, hasti_mem_mem)), "") /\ EdgeExists((j, (0, hasti_mem_mem)), (i2, mgnode_2), ""))  => SameData i1 i2 => 
+AddEdge((i1, (0, hasti_mem_mem)), (i2, mgnode_2), "rf_24", "blue").% 8
+ % 24 IS_DATA_DEP
+Axiom "HBI_25": forall microop "i1",  forall microop "i2", 
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyRead i2 => SamePhysicalAddress i1 i2 => 
+AddEdge((i1, mgnode_2), (i2, mgnode_2), "infer_ws_shared_25", "red").% -1
+
+Axiom "HBI_26": forall microop "i1",  forall microop "i2",
+SameCore i1 i2 => EdgeExists((i1, IF_), (i2, IF_), "") => IsAnyRead i1 => IsAnyRead i2 =>  
+AddEdge((i1, mgnode_2), (i2, mgnode_2), "tprl_26", "blue").% 17
+% -------------------- inferred ----------------------------
+Axiom "co_rf_fr_0": forall microop "i1",  forall microop "i2", 
+~SameMicroop i1 i2 =>  IsAnyWrite i1 => IsAnyRead i2  => SamePhysicalAddress i1 i2 => DataFromInitialStateAtPA i2 =>  AddEdge((i2, mgnode_2), (i1, (0, hasti_mem_mem)), "init_fr").
+
+Axiom "HBI_fr_0": forall microop "i1",  forall microop "i2", forall microop "i3", 
+~ SameMicroop i1 i2 => ~ SameMicroop i1 i3 => ~ SameMicroop i3 i2 =>  
+IsAnyWrite i1 => IsAnyRead i2 => SameData i1 i2 => ~SameData i2 i3 => 
+IsAnyWrite i3 => SamePhysicalAddress i1 i2 =>  SamePhysicalAddress i1 i3 => 
+EdgeExists((i1, (0, hasti_mem_mem)), (i2, mgnode_2), "www") => 
+EdgeExists((i1, (0, hasti_mem_mem)), (i3, (0, hasti_mem_mem)), "rrr") => 
+AddEdge((i2, mgnode_2), (i3, (0, hasti_mem_mem)), "ws_final", "red").
+Axiom "HBI_final_0": forall microop "i1",  forall microop "i2", 
+~SameMicroop i1 i2 =>  IsAnyWrite i1 => IsAnyWrite i2 => SamePhysicalAddress i1 i2 => DataFromFinalStateAtPA i2 =>
+AddEdge((i1, (0, hasti_mem_mem)), (i2, (0, hasti_mem_mem)), "ws_final", "red").
+%core_gen_block[0].vscale.pipeline.csr.htif_resp_data,mgnode_3
+%core_gen_block[0].vscale.pipeline.regfile.data,mgnode_2
+%hasti_mem.p0_waddr,mgnode_1
+%core_gen_block[0].vscale.pipeline.store_data_WB,mgnode_0
+%core_gen_block[0].vscale.pipeline.inst_DX,IF_

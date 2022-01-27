@@ -397,7 +397,7 @@ AddEdge((i1, LOC1), (i2, LOC2), "infer_ws_shared_SEQNO", "red"))";
         hbi_inter_s += axiom + "." + "% " + std::to_string(itm.file_seqno) + "\n";
     } // end uspec_dump_structural_spatial 
 
-    void uspec_dump_inter(hbi_res &itm, bool ismem_1, bool ismem_2, bool is_shared1, bool is_shared2) {
+    void uspec_dump_inter(hbi_res &itm, bool ismem_1, bool ismem_2, bool is_shared1, bool is_shared2, bool is_data_dep = false ) {
 
         if (is_shared1 && !ismem_1) {
             is_shared1 = false;
@@ -456,6 +456,8 @@ AddEdge((i1, LOC1), (i2, LOC2), "TYPESEQNO", "blue"))";
             }
 
             hbi_inter_s += axiom + "." + "% " + std::to_string(itm.file_seqno); 
+            if (is_data_dep)
+                hbi_inter_s += "\n % " + std::to_string(hbi_inter_cnt-1) + " IS_DATA_DEP";
         } else {
             log("[error] %s\n", itm.tostr().c_str());
         }
@@ -594,7 +596,7 @@ AddEdge((i1, KEY), (i2, KEY), "ws_final", "red")+)";
 
 					auto inter_pool_ = inter_struc_tmeporal.get(p);
 					auto dp_pool_ = inter_datadep.get(p);
-					inter_pool_.insert(dp_pool_.begin(), dp_pool_.end());
+					//inter_pool_.insert(dp_pool_.begin(), dp_pool_.end());
 					for (auto &itm: inter_pool_) {
 						//log("itm%d\n", itm.file_seqno);
 						if (all_uhb_parents.find(itm.i2_loc) == all_uhb_parents.end() || 
@@ -615,6 +617,29 @@ AddEdge((i1, KEY), (i2, KEY), "ws_final", "red")+)";
 						bool is_shared1 = (itm.i1_loc.find(percore_prefix) == std::string::npos);
 						bool is_shared2 = (itm.i2_loc.find(percore_prefix) == std::string::npos);
                         uspec_dump_inter(itm, ismem_1, ismem_2, is_shared1, is_shared2);
+                    
+					}
+                    // data dependency
+					for (auto &itm: dp_pool_) {
+						//log("itm%d\n", itm.file_seqno);
+						if (all_uhb_parents.find(itm.i2_loc) == all_uhb_parents.end() || 
+						all_uhb_parents.find(itm.i1_loc) == all_uhb_parents.end()) {
+                            //log("not found in uhb_parents %s %s\n", itm.i1_loc.c_str(), itm.i2_loc.c_str());
+                             continue;	
+                        }
+                        if (itm.file_seqno == -1) {
+                            log("seqno = -1 %s \n", itm.tostr().c_str());
+                        }
+						if (itm.file_seqno != -1 && visited.find(itm) != visited.end())  {
+                            //log("[yhdb] pass2;\n");
+                            continue;
+                        }
+						visited.insert(itm);
+						bool ismem_1 = per_inst_DFG[idx].memgraph.ismem(itm.i1_loc);
+						bool ismem_2 = per_inst_DFG[idx].memgraph.ismem(itm.i2_loc);
+						bool is_shared1 = (itm.i1_loc.find(percore_prefix) == std::string::npos);
+						bool is_shared2 = (itm.i2_loc.find(percore_prefix) == std::string::npos);
+                        uspec_dump_inter(itm, ismem_1, ismem_2, is_shared1, is_shared2, true);
                     
 					}
 					stage_nodes.insert(p);
